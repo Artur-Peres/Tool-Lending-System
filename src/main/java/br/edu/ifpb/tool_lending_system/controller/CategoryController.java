@@ -1,5 +1,7 @@
 package br.edu.ifpb.tool_lending_system.controller;
 
+import br.edu.ifpb.tool_lending_system.dto.CategoryRequestDTO;
+import br.edu.ifpb.tool_lending_system.dto.CategoryResponseDTO;
 import br.edu.ifpb.tool_lending_system.exception.CategoryNotFoundException;
 import br.edu.ifpb.tool_lending_system.model.Category;
 import br.edu.ifpb.tool_lending_system.service.CategoryService;
@@ -21,37 +23,63 @@ public class CategoryController {
     }
 
     @PostMapping
-    public Category cadastrar(@RequestBody Category category) {
+    public CategoryResponseDTO cadastrar(
+            @RequestBody CategoryRequestDTO request) {
+
+        Category category = new Category(
+                request.getName(),
+                request.getDescription()
+        );
+
         categoryService.cadastrar(category);
-        return category;
+
+        return converterParaResponse(category);
     }
 
     @GetMapping
-    public List<Category> listarTodos() {
-        return categoryService.listarTodos();
+    public List<CategoryResponseDTO> listarTodos() {
+
+        return categoryService.listarTodos()
+                .stream()
+                .map(this::converterParaResponse)
+                .toList();
     }
 
     @GetMapping("/{id}")
-    public Category buscarPorId(@PathVariable Long id) {
-        return categoryService.buscarPorId(id);
+    public CategoryResponseDTO buscarPorId(@PathVariable Long id) {
+
+        Category category = categoryService.buscarPorId(id);
+
+        return converterParaResponse(category);
     }
 
     @PutMapping("/{id}")
-    public Category atualizar(
+    public CategoryResponseDTO atualizar(
             @PathVariable Long id,
-            @RequestBody Category category) {
+            @RequestBody CategoryRequestDTO request) {
 
         Category existente = categoryService.buscarPorId(id);
 
-        existente.setName(category.getName());
-        existente.setDescription(category.getDescription());
+        existente.setName(request.getName());
+        existente.setDescription(request.getDescription());
 
-        return categoryService.atualizar(existente);
+        Category atualizada = categoryService.atualizar(existente);
+
+        return converterParaResponse(atualizada);
     }
 
     @DeleteMapping("/{id}")
     public void excluir(@PathVariable Long id) {
         categoryService.excluir(id);
+    }
+
+    private CategoryResponseDTO converterParaResponse(Category category) {
+
+        return new CategoryResponseDTO(
+                category.getId(),
+                category.getName(),
+                category.getDescription()
+        );
     }
 
     @ExceptionHandler(CategoryNotFoundException.class)
