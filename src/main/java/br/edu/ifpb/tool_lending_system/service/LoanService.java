@@ -26,6 +26,9 @@ public class LoanService {
     @Value("${loan.late-penalty-points}")
     private int latePenaltyPoints;
 
+    @Value("${loan.on-time-reward-points}")
+    private int onTimeRewardPoints;
+
     public LoanService(LoanDAO loanDAO, UserDAO userDAO, EquipmentDAO equipmentDAO) {
         this.loanDAO = loanDAO;
         this.userDAO = userDAO;
@@ -110,8 +113,9 @@ public class LoanService {
         boolean late = today.isAfter(loan.getDueDate());
 
         if (late) {
-            loan.setStatus(StatusLoan.LATE);
             applyLatePenalty(loan.getUser());
+        } else {
+            applyOnTimeReward(loan.getUser());
         }
 
         loan.setReturnDate(today);
@@ -198,6 +202,15 @@ public class LoanService {
     private void applyLatePenalty(User user) {
 
         int newTrustPoints = Math.max(0, user.getTrustPoints() - latePenaltyPoints);
+
+        user.setTrustPoints(newTrustPoints);
+
+        userDAO.update(user);
+    }
+
+    private void applyOnTimeReward(User user) {
+
+        int newTrustPoints = Math.min(100, user.getTrustPoints() + onTimeRewardPoints);
 
         user.setTrustPoints(newTrustPoints);
 
